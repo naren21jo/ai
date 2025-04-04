@@ -7,7 +7,6 @@ import org.openqa.selenium.edge.EdgeDriver;
 public class LoginPage {
 
     public static void main(String[] args) {
-
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
         WebDriver driver = new EdgeDriver();
         driver.manage().window().maximize();
@@ -20,12 +19,8 @@ public class LoginPage {
 
         String homePageText = driver.findElement(By.xpath("//h1[@class='post-title']")).getText();
 
-        if(homePageText.equals("Logged In Successfully"))
-        {
-        	System.out.println("Test passed");
-        }
-        else {
-        	System.out.println("test failed");
+        if (homePageText.equals("Logged In Successfully")) {
+           //Verification
         }
 
         driver.quit();
