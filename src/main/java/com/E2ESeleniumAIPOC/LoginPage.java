@@ -15,11 +15,13 @@ public class LoginPage {
         driver.findElement(By.id("password")).sendKeys("Password123");
         driver.findElement(By.id("submit")).click();
 
-        String homePageText = driver.findElement(By.xpath("//h1[@class='post-title']")).getText();
-        if (homePageText.equals("Logged In Successfully")) {
-            System.out.println("Login successful");
+        String expectedText = "Logged In Successfully";
+        String actualText = driver.findElement(By.xpath("//h1[@class='post-title']")).getText();
+
+        if (actualText.equals(expectedText)) {
+           // System.out.println("Login successful!");
         } else {
-            System.out.println("Login failed");
+          //  System.out.println("Login failed.");
         }
 
         driver.quit();

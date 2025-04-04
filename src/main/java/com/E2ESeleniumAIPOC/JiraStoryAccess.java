@@ -14,20 +14,20 @@ public class JiraStoryAccess {
 
      
         	  		JsonDataReading.loadTestData();
-	                String jira_get_request_url = JsonDataReading.getObjectData("jira_details").getString("jira_get_requrest_url");
-	                String taskid = JsonDataReading.getObjectData("jira_details").getString("taskid");
-	                String jira_username = JsonDataReading.getObjectData("jira_details").getString("jira_username");
-	                String jira_password = JsonDataReading.getObjectData("jira_details").getString("jira_password");
+	                String j_get_request_url = JsonDataReading.getObjectData("j_details").getString("j_get_request_url");
+	                String taskid = JsonDataReading.getObjectData("j_details").getString("taskid");
+	                String j_u = JsonDataReading.getObjectData("j_details").getString("j_u");
+	                String j_p = JsonDataReading.getObjectData("j_details").getString("j_p");
 	                
         	  		System.out.println("############# Getting Manual steps from JIRA board ###############");
-                    String jiraUrl = jira_get_request_url + taskid + "?fields=description";
+                    String jUrl = j_get_request_url + taskid + "?fields=description";
                     
                     // Set up basic authentication
                     PreemptiveBasicAuthScheme basicAuth = new PreemptiveBasicAuthScheme();
-                    basicAuth.setUserName(jira_username);
-                    basicAuth.setPassword(jira_password);
+                    basicAuth.setUserName(j_u);
+                    basicAuth.setPassword(j_p);
                     RestAssured.authentication = basicAuth;
-                    Response response = RestAssured.given().get(jiraUrl);
+                    Response response = RestAssured.given().get(jUrl);
                     // Extract the response details
                     JsonPath jsonPath = response.jsonPath();
                     // Get the 'description' field from the JSON response

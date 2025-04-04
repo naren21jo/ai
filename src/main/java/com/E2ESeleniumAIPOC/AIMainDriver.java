@@ -55,8 +55,8 @@ public  class AIMainDriver {
 
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
         EdgeOptions options = new EdgeOptions();
-        //options.addArguments("headless"); 
-        WebDriver driver = new EdgeDriver();
+        options.addArguments("headless"); 
+        WebDriver driver = new EdgeDriver(options);
         driver.get(web_url);
 
         String pageSource = driver.getPageSource();
