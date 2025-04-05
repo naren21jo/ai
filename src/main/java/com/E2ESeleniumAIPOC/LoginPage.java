@@ -2,6 +2,7 @@ package com.E2ESeleniumAIPOC;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.edge.EdgeDriver;
 
 public class LoginPage {
@@ -16,18 +17,21 @@ public class LoginPage {
 
         driver.get("https://practicetestautomation.com/practice-test-login/");
 
-        driver.findElement(By.id("username")).sendKeys("student");
+        WebElement usernameField = driver.findElement(By.id("username"));
+        usernameField.sendKeys("student");
 
-        driver.findElement(By.id("password")).sendKeys("Password123");
+        WebElement passwordField = driver.findElement(By.id("password"));
+        passwordField.sendKeys("Password123");
 
-        driver.findElement(By.id("submit")).click();
+        WebElement submitButton = driver.findElement(By.id("submit"));
+        submitButton.click();
 
-        String homePageText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]")).getText();
+        WebElement logOutButton = driver.findElement(By.linkText("Log out"));
 
-        if (homePageText.contains("Logged In Successfully")) {
-           // System.out.println("Login successful!");
-        } else {
-           // System.out.println("Login failed.");
+        if(logOutButton.isDisplayed()){
+            System.out.println("Login Success");
+        }else {
+            System.out.println("Login Failed");
         }
 
         driver.quit();
