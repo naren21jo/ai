@@ -8,8 +8,11 @@ import org.openqa.selenium.edge.EdgeDriver;
 public class LoginPage {
 
     public static void main(String[] args) {
+
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
+
         WebDriver driver = new EdgeDriver();
+
         driver.manage().window().maximize();
 
         driver.get("https://practicetestautomation.com/practice-test-login/");
@@ -23,9 +26,13 @@ public class LoginPage {
         WebElement submitButton = driver.findElement(By.id("submit"));
         submitButton.click();
 
-        WebElement homepageText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
-        homepageText.isDisplayed();
+        WebElement loggedInText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
 
+        if (loggedInText.isDisplayed()) {
+          //  System.out.println("Login successful. Home page displayed.");
+        } else {
+          //  System.out.println("Login failed or Home page not displayed.");
+        }
         driver.quit();
     }
 }
