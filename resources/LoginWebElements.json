@@ -1,0 +1,16 @@
+{
+"classNames":{
+"className":"LoginPage"
+},
+
+  "webelements": {
+    "username_login": "//input[@id=\"username\"]",
+    "password_login": "//input[@id=\"password\"]",
+    "submit_login": "//button[@id=\"submit\"]"
+  },
+  
+  "aiprompt":{
+  "prompt":"Create the simple plain selenium java code, dont use testNG for given manual steps.use this package com.E2ESeleniumAIPOC. take the class name as LoginPage, setup the edge driver using setproperty(), use the path 'drivers//msedgedriver.exe' and dont generate, dont provide and dont print anything apart from simple code, maximize the browser window and verify home page after login using text from home page and then close the browser . Do not include the java or formatting,The output should start directly with the first line of code and end with the last closing brace.Do not include the java or formatting,The output should start directly with the first line of code and end with the last closing brace }"
+  }
+  
+}
