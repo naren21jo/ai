@@ -5,12 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import okhttp3.*;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -19,10 +14,12 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.tools.Diagnostic;
@@ -36,193 +33,301 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 
-public  class AIMainDriver {
+
+public class AIMainDriver {
+
+ // --- Configuration for GitHub ---
+ // IMPORTANT: Replace with the actual path to your LOCAL git repository clone
+ private static final String LOCAL_GIT_REPO_PATH = "C:\\Users\\hp\\eclipse-workspace\\E2ESeleniumAIPOC";
+ // IMPORTANT: Relative path within the repo where the .java file should be saved
+ private static final String TARGET_DIR_IN_REPO = "src/main/java/com/E2ESeleniumAIPOC";
+ // IMPORTANT: The branch to push to
+ private static final String GIT_BRANCH_NAME = "main"; // Or "develop", etc.
 
 
-    // Main function to test the implementation
-    public static void main(String[] args) throws IOException, IllegalAccessException, InvocationTargetException {
+ // Main function
+ public static void main(String[] args) throws IOException, IllegalAccessException, InvocationTargetException, InterruptedException { // Added InterruptedException
 
-        JsonDataReading.loadTestData();
-        String web_url = JsonDataReading.getObjectData("web_details").getString("web_url");
+     // --- Existing setup code ---
+     JsonDataReading.loadTestData();
+     String web_url = JsonDataReading.getObjectData("web_details").getString("web_url");
 
-        ReadingWebElements.loadWebElementData();
-        String username_login = ReadingWebElements.getObjectData("webelements").getString("username_login");
-        String password_login = ReadingWebElements.getObjectData("webelements").getString("password_login");
-        String submit_login = ReadingWebElements.getObjectData("webelements").getString("submit_login");
-        String className = ReadingWebElements.getObjectData("classNames").getString("className");
-        String prompt = ReadingWebElements.getObjectData("aiprompt").getString("prompt");
-        String packageName = "com.E2ESeleniumAIPOC"; // Define the package name
+     ReadingWebElements.loadWebElementData();
+     String username_login = ReadingWebElements.getObjectData("webelements").getString("username_login");
+     String password_login = ReadingWebElements.getObjectData("webelements").getString("password_login");
+     String submit_login = ReadingWebElements.getObjectData("webelements").getString("submit_login");
+     String className = ReadingWebElements.getObjectData("classNames").getString("className");
+     String prompt = ReadingWebElements.getObjectData("aiprompt").getString("prompt");
+     String packageName = "com.E2ESeleniumAIPOC";
 
-        System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
-        EdgeOptions options = new EdgeOptions();
-        options.addArguments("headless"); 
-        WebDriver driver = new EdgeDriver(options);
-        driver.get(web_url);
+     System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
+     EdgeOptions options = new EdgeOptions();
+     options.addArguments("headless");
+     WebDriver driver = new EdgeDriver(options);
+     driver.get(web_url);
+     String pageSource = driver.getPageSource();
+     driver.quit();
 
-        String pageSource = driver.getPageSource();
-        driver.quit();
-        try {
-            
-            String welements = GenerateXPath.genXPath(pageSource, username_login, password_login, submit_login);
-            System.out.println("############# Generating XPaths from PageSource ###############");
-            System.out.println(welements);
+     File outputFile = null; // Declare here to be accessible in finally block if needed
+     Path outputDir = Paths.get("target/generated-classes"); // Compilation output dir
 
-            String manualTestCase = JiraStoryAccess.main(args); // Assuming this returns the test steps string
-            try {
-                // Assuming GenerateSeleniumCode is static or create an instance
-                String seleniumCode = GenerateSeleniumCode.generateSeleniumCode(prompt,manualTestCase, username_login, password_login, submit_login, className);
-                System.out.println("############# Generating Selenium Automation Code using Manual steps ############");
-                System.out.println(seleniumCode);
+     try {
+        
+         String welements = GenerateXPath.genXPath(pageSource, username_login, password_login, submit_login);
+         System.out.println("############# Generating XPaths from PageSource ###############");
+         System.out.println(welements);
 
-                // Define source file path
-                String sourceFilePath = "src/main/java/" + packageName.replace('.', '/') + "/" + className + ".java";
-                File outputFile = new File(sourceFilePath);
+         String manualTestCase = JiraStoryAccess.main(args);
+         try {
+             String seleniumCode = GenerateSeleniumCode.generateSeleniumCode(prompt, manualTestCase, username_login, password_login, submit_login, className);
+             System.out.println("############# Generating Selenium Automation Code using Manual steps ############");
+             System.out.println(seleniumCode);
 
-                // Ensure parent directories exist
-                outputFile.getParentFile().mkdirs();
+             String sourceFilePath = "src/main/java/" + packageName.replace('.', '/') + "/" + className + ".java";
+             outputFile = new File(sourceFilePath); // Assign here
+             outputFile.getParentFile().mkdirs();
 
-                // Write the generated code to the file
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-                    writer.write(seleniumCode);
-                }
-                System.out.println("Code has been generated and saved to: " + outputFile.getAbsolutePath());
+             try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+                 writer.write(seleniumCode);
+             }
+             System.out.println("Code has been generated and saved to: " + outputFile.getAbsolutePath());
 
-                // --- START: Code to Compile and Run the Generated Class ---
+             // --- Compile ---
+             System.out.println("\n############# Compiling Generated Code ###############");
 
-                System.out.println("\n############# Compiling Generated Code ###############");
+             if (!outputFile.exists()) {
+                 System.err.println("Error: Source file not found: " + outputFile.getAbsolutePath());
+                 return;
+             }
 
-                File sourceFile = new File(sourceFilePath);
-                if (!sourceFile.exists()) {
-                    System.err.println("Error: Source file not found: " + sourceFile.getAbsolutePath());
-                    return;
-                }
+             Files.createDirectories(outputDir);
 
-                // Prepare output directory for .class files
-                Path outputDir = Paths.get("target/generated-classes");
-                Files.createDirectories(outputDir); // Create directory if it doesn't exist
+             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+             if (compiler == null) {
+                 System.err.println("Error: No Java compiler found. Make sure you are running with a JDK.");
+                 return;
+             }
 
-                JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                if (compiler == null) {
-                    System.err.println("Error: No Java compiler found. Make sure you are running with a JDK, not just a JRE.");
-                    System.err.println("JAVA_HOME=" + System.getProperty("java.home"));
-                    return;
-                }
+             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+             StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
 
-                DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-                StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
+             List<String> optionList = new ArrayList<>();
+             optionList.add("-classpath");
+             String currentClasspath = System.getProperty("java.class.path");
+             optionList.add(outputDir.toAbsolutePath().toString() + File.pathSeparator + currentClasspath);
+             optionList.add("-d");
+             optionList.add(outputDir.toAbsolutePath().toString());
 
-                // Set compiler options (classpath, output directory)
-                List<String> optionList = new ArrayList<>();
-                optionList.add("-classpath");
-                // Include current classpath + output directory
-                String currentClasspath = System.getProperty("java.class.path");
-                optionList.add(outputDir.toAbsolutePath().toString() + File.pathSeparator + currentClasspath);
-                optionList.add("-d"); // Option for output directory
-                optionList.add(outputDir.toAbsolutePath().toString()); // Specify output directory
+             System.out.println("Compiler Classpath: " + optionList.get(1));
+             System.out.println("Compiler Output Directory: " + optionList.get(3));
 
-                System.out.println("Compiler Classpath: " + optionList.get(1));
-                System.out.println("Compiler Output Directory: " + optionList.get(3));
+             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(outputFile));
+             JavaCompiler.CompilationTask task = compiler.getTask(new PrintWriter(System.err), fileManager, diagnostics, optionList, null, compilationUnits);
+             boolean compilationSuccess = task.call();
+             fileManager.close();
 
+             // --- Execute only if Compilation Succeeded ---
+             if (compilationSuccess) {
+                 System.out.println("Compilation successful.");
+                 System.out.println("\n############# Running Generated Code ###############");
 
-                Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile));
+                 boolean executionSuccessful = false; // Flag for execution status
+                 URLClassLoader classLoader = null; // Declare outside try for finally block
 
-                JavaCompiler.CompilationTask task = compiler.getTask(
-                        new PrintWriter(System.err), // Use System.err for compiler messages
-                        fileManager,
-                        diagnostics,
-                        optionList,
-                        null,
-                        compilationUnits
-                );
+                 try {
+                     List<URL> urls = new ArrayList<>();
+                     urls.add(outputDir.toUri().toURL());
+                     String[] classpathEntries = currentClasspath.split(File.pathSeparator);
+                     for (String entry : classpathEntries) {
+                         try { urls.add(new File(entry).toURI().toURL()); } catch (MalformedURLException | SecurityException e) { /* ignore problematic entries */ }
+                     }
 
-                boolean success = task.call();
-                fileManager.close();
+                     classLoader = new URLClassLoader(urls.toArray(new URL[0]), AIMainDriver.class.getClassLoader());
 
-                if (success) {
-                    System.out.println("Compilation successful.");
-                    System.out.println("\n############# Running Generated Code ###############");
+                     String fullyQualifiedClassName = packageName + "." + className;
+                     System.out.println("Loading class: " + fullyQualifiedClassName);
+                     Class<?> loadedClass = classLoader.loadClass(fullyQualifiedClassName);
 
-                    try {
-                        // Create a URLClassLoader to load the compiled class and its dependencies
-                        List<URL> urls = new ArrayList<>();
-                        // Add the output directory
-                        urls.add(outputDir.toUri().toURL());
-                        // Add jars from the current classpath
-                        String[] classpathEntries = currentClasspath.split(File.pathSeparator);
-                        for (String entry : classpathEntries) {
-                            try {
-                                urls.add(new File(entry).toURI().toURL());
-                            } catch (MalformedURLException | SecurityException e) {
-                                System.err.println("Warning: Skipping classpath entry: " + entry + " (" + e.getMessage() + ")");
-                            }
-                        }
+                     Method mainMethod = loadedClass.getMethod("main", String[].class);
 
-                        URLClassLoader classLoader = new URLClassLoader(urls.toArray(new URL[0]), AIMainDriver.class.getClassLoader());
+                     System.out.println("Invoking " + fullyQualifiedClassName + ".main()...");
+                     Object[] methodArgs = { new String[0] };
+                     mainMethod.invoke(null, methodArgs); // Run the main method
 
-                        // Load the generated class
-                        String fullyQualifiedClassName = packageName + "." + className;
-                        System.out.println("Loading class: " + fullyQualifiedClassName);
-                        Class<?> loadedClass = classLoader.loadClass(fullyQualifiedClassName);
-
-                        // Find the main method
-                        Method mainMethod = loadedClass.getMethod("main", String[].class);
-
-                        // Invoke the main method (statically)
-                        System.out.println("Invoking " + fullyQualifiedClassName + ".main()...");
-                        Object[] methodArgs = { new String[0] }; // Pass empty args array to main
-                        mainMethod.invoke(null, methodArgs); // First arg is null for static methods
-
-                        System.out.println("\n############# Generated Code Execution Finished ###############");
-                        classLoader.close(); // Close classloader if possible (available in Java 7+)
+                     // --- If invoke completes without exception, mark as successful ---
+                     executionSuccessful = true;
+                     System.out.println("\n############# Generated Code Execution Finished Successfully ###############");
 
 
-                    } catch (ClassNotFoundException e) {
-                        System.err.println("Error: Could not find the compiled class: " + packageName + "." + className);
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        System.err.println("Error: Could not find the main(String[] args) method in the generated class.");
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        System.err.println("Error: Could not access the main method (check visibility).");
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        System.err.println("Error: An exception occurred while executing the generated code's main method:");
-                        e.getTargetException().printStackTrace(); // Print the actual exception thrown by the generated code
-                    } catch (MalformedURLException e) {
-                         System.err.println("Error creating URL for class loading.");
-                         e.printStackTrace();
-                    } catch (IOException e) {
-                        System.err.println("Error closing URLClassLoader.");
-                        e.printStackTrace();
-                    }
+                 } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+                     System.err.println("Error setting up or finding the main method for execution:");
+                     e.printStackTrace();
+                 } catch (InvocationTargetException e) {
+                     System.err.println("Error: An exception occurred *during* the execution of the generated code's main method:");
+                     e.getTargetException().printStackTrace(); // Show the actual exception from the generated code
+                     executionSuccessful = false; // Explicitly mark as failed
+                 } catch (MalformedURLException e) {
+                     System.err.println("Error creating URL for class loading.");
+                     e.printStackTrace();
+                 } finally {
+                     if (classLoader != null) {
+                         try {
+                             classLoader.close(); // Close classloader (Java 7+)
+                         } catch (IOException e) {
+                             System.err.println("Warning: Could not close ClassLoader: " + e.getMessage());
+                         }
+                     }
+                 }
 
-                } else {
-                    System.err.println("Compilation failed.");
-                    for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
-                        System.err.format("Error on line %d in %s%n%s%n",
-                                diagnostic.getLineNumber(),
-                                diagnostic.getSource() != null ? diagnostic.getSource().toUri() : "unknown source",
-                                diagnostic.getMessage(null));
-                    }
-                }
+                 // --- Save to GitHub ONLY IF Execution was Successful ---
+                 if (executionSuccessful) {
+                     System.out.println("\n############# Execution Successful - Attempting to Save to GitHub ###############");
+                     saveToGitHub(outputFile, LOCAL_GIT_REPO_PATH, TARGET_DIR_IN_REPO, className, GIT_BRANCH_NAME);
+                 } else {
+                     System.out.println("\n############# Execution Failed or Errored - Skipping GitHub Save ###############");
+                 }
 
-                // --- END: Code to Compile and Run ---
+             } else { // Compilation Failed
+                 System.err.println("Compilation failed.");
+                 for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                     System.err.format("Error on line %d in %s%n%s%n",
+                             diagnostic.getLineNumber(),
+                             diagnostic.getSource() != null ? diagnostic.getSource().toUri() : "unknown source",
+                             diagnostic.getMessage(null));
+                 }
+             }
+             // --- END: Compile and Run Logic ---
+
+         } catch (IOException e) { // Catch for GenerateSeleniumCode
+             System.err.println("Error generating Selenium code: " + e.getMessage());
+             e.printStackTrace();
+         }
+
+     } catch (IOException e) { // Catch for GenerateXPath or JiraStoryAccess
+         System.err.println("Error during setup or generation phase: " + e.getMessage());
+         e.printStackTrace();
+     } finally {
+         System.out.println("\n############# Process Finished ###############");
+         // Optional cleanup (delete .class files etc.) can go here
+          try {
+              // Simple cleanup of the compiled class file
+              File classFile = new File(outputDir.toFile(), packageName.replace('.', '/') + "/" + className + ".class");
+              if(classFile.exists()) {
+                   // Files.deleteIfExists(classFile.toPath()); // Consider deleting if not needed later
+                   System.out.println("Compiled class file located at: " + classFile.getAbsolutePath());
+              }
+          } catch (Exception e) {
+              System.err.println("Warning: Error during cleanup: " + e.getMessage());
+          }
+     }
+ }
 
 
-            } catch (IOException e) {
-                System.err.println("Error generating code: " + e.getMessage());
-                e.printStackTrace();
-            }
+ /**
+  * Copies the generated source file to the local Git repository and performs git add, commit, push.
+  * Assumes Git CLI is installed, configured for push without interaction, and in the system PATH.
+  *
+  * @param sourceJavaFile The generated .java file to save.
+  * @param localRepoPath The absolute path to the local Git repository clone.
+  * @param targetDirInRepo The relative directory path within the repository where the file should be saved.
+  * @param className The name of the generated class (for commit message).
+  * @param branchName The git branch to push to.
+  */
+ private static void saveToGitHub(File sourceJavaFile, String localRepoPath, String targetDirInRepo, String className, String branchName) {
+     if (localRepoPath == null || localRepoPath.trim().isEmpty()) {
+         System.err.println("GitHub Save Error: Local Git repository path is not configured.");
+         return;
+     }
 
-        } catch (IOException e) { // Catch for GenerateXPath or JiraStoryAccess
-            System.err.println("Error during setup or generation phase: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-             // Optional: Consider cleanup like deleting generated .class files or the output directory
-             // File classFile = new File(outputDir.toFile(), packageName.replace('.', '/') + "/" + className + ".class");
-             // if (classFile.exists()) classFile.delete();
-             // outputFile.delete(); // Optionally delete source file too
-             // Files.deleteIfExists(outputDir); // Careful if other things use this dir
-        }
-    }
+     File repoDir = new File(localRepoPath);
+     if (!repoDir.exists() || !repoDir.isDirectory()) {
+         System.err.println("GitHub Save Error: Local Git repository path does not exist or is not a directory: " + localRepoPath);
+         return;
+     }
+
+     try {
+         // 1. Determine target path and create directories
+         Path targetPath = Paths.get(localRepoPath, targetDirInRepo, sourceJavaFile.getName());
+         Files.createDirectories(targetPath.getParent());
+
+         // 2. Copy the source file into the repository
+         Files.copy(sourceJavaFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+         System.out.println("Copied generated file to: " + targetPath);
+
+         // 3. Execute Git commands
+         String relativeFilePathInRepo = Paths.get(targetDirInRepo, sourceJavaFile.getName()).toString().replace("\\", "/"); // Git prefers forward slashes
+         String commitMessage = "Add successfully executed generated class: " + className;
+
+         boolean gitAddSuccess = runGitCommand(localRepoPath, "git", "add", relativeFilePathInRepo);
+         if (!gitAddSuccess) {
+             System.err.println("GitHub Save Error: 'git add' command failed.");
+             return; // Stop if add fails
+         }
+
+         boolean gitCommitSuccess = runGitCommand(localRepoPath, "git", "commit", "-m", commitMessage);
+         // Check commit status - it might return non-zero if there's nothing to commit, which is okay if add succeeded but file was unchanged.
+         // A more robust check would inspect the output for "nothing to commit". For simplicity, we proceed if add succeeded.
+          if (!gitCommitSuccess) {
+              System.out.println("Git commit command finished (may indicate no changes to commit).");
+              // Optional: check stderr/stdout for "nothing to commit" if strict checking is needed
+          }
+
+
+         boolean gitPushSuccess = runGitCommand(localRepoPath, "git", "push", "origin", branchName);
+         if (!gitPushSuccess) {
+             System.err.println("GitHub Save Error: 'git push' command failed. Check Git output and authentication.");
+             return;
+         }
+
+         System.out.println("Successfully added, committed, and pushed " + sourceJavaFile.getName() + " to GitHub repository (" + branchName + " branch).");
+
+     } catch (IOException e) {
+         System.err.println("GitHub Save Error: Failed to copy file or run git command.");
+         e.printStackTrace();
+     } catch (InterruptedException e) {
+         System.err.println("GitHub Save Error: Git command execution was interrupted.");
+         Thread.currentThread().interrupt(); // Restore interrupt status
+         e.printStackTrace();
+     }
+ }
+
+ /**
+  * Helper method to run a Git command using ProcessBuilder.
+  * @param workingDir The directory where the command should be executed (the repo root).
+  * @param command The command and its arguments (e.g., "git", "add", "file.java").
+  * @return true if the command exits with code 0, false otherwise.
+  * @throws IOException If an I/O error occurs.
+  * @throws InterruptedException If the current thread is interrupted while waiting.
+  */
+ private static boolean runGitCommand(String workingDir, String... command) throws IOException, InterruptedException {
+     System.out.println("Executing Git command: " + String.join(" ", command) + " in " + workingDir);
+     ProcessBuilder pb = new ProcessBuilder(command);
+     pb.directory(new File(workingDir));
+     pb.redirectErrorStream(true); // Merge error stream into output stream
+
+     Process process = pb.start();
+
+     // Capture output (optional but good for debugging)
+     StringBuilder output = new StringBuilder();
+     try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+         String line;
+         while ((line = reader.readLine()) != null) {
+             output.append(line).append(System.lineSeparator());
+         }
+     }
+
+     int exitCode = process.waitFor(); // Wait for the command to complete
+
+     System.out.println("Git command output:\n" + output);
+     System.out.println("Git command exited with code: " + exitCode);
+
+     // Special case for commit: exit code 1 might mean "nothing to commit" which isn't always an error here
+     if (command.length > 1 && command[1].equals("commit") && exitCode == 1 && output.toString().contains("nothing to commit")) {
+          System.out.println("Git commit indicated nothing to commit, proceeding.");
+          return true; // Treat "nothing to commit" as success in this context
+     }
+
+     return exitCode == 0;
+ }
+
 }
