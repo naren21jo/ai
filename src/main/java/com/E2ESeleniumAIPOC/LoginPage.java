@@ -23,11 +23,8 @@ public class LoginPage {
         WebElement submitButton = driver.findElement(By.id("submit"));
         submitButton.click();
 
-        WebElement loggedInText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
-        if(loggedInText.isDisplayed())
-        {
-         System.out.println("login succesfull");
-        }
+        WebElement homepageText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
+        homepageText.isDisplayed();
 
         driver.quit();
     }
