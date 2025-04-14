@@ -2,36 +2,22 @@ package com.E2ESeleniumAIPOC;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.edge.EdgeDriver;
 
 public class LoginPage {
 
     public static void main(String[] args) {
-
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
-
         WebDriver driver = new EdgeDriver();
-
         driver.manage().window().maximize();
-
         driver.get("https://practicetestautomation.com/practice-test-login/");
+        driver.findElement(By.id("username")).sendKeys("student");
+        driver.findElement(By.id("password")).sendKeys("Password123");
+        driver.findElement(By.id("submit")).click();
 
-        WebElement usernameField = driver.findElement(By.id("username"));
-        usernameField.sendKeys("student");
-
-        WebElement passwordField = driver.findElement(By.id("password"));
-        passwordField.sendKeys("Password123");
-
-        WebElement submitButton = driver.findElement(By.id("submit"));
-        submitButton.click();
-
-        WebElement loggedInText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
-
-        if (loggedInText.isDisplayed()) {
-          //  System.out.println("Login successful. Home page displayed.");
-        } else {
-          //  System.out.println("Login failed or Home page not displayed.");
+        String homePageText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]")).getText();
+        if(homePageText.contains("Logged In Successfully")){
+            System.out.println("Login Successful");
         }
         driver.quit();
     }
