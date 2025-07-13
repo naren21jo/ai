@@ -13,8 +13,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class GenerateSeleniumCode {
-    private static final String required = "";
-    private static final String required_url = "";
+    private static final String required = "AIzaSyDIDiV4wZGAxvcVkaeuu92PwQ-_krIEsV4";
+    private static final String required_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + required;
     private static final OkHttpClient client = new OkHttpClient();
    
     // Method to generate Selenium code from manual test case

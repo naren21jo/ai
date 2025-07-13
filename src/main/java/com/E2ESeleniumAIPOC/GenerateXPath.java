@@ -21,9 +21,9 @@ public class GenerateXPath {
 
 
     
-    private static final String required = ""; 
+    private static final String required = "AIzaSyAzLjYwnh7632guMEiZ-2YeZJxZfUZjaPk"; 
     
-    private static final String required_url = "";
+    private static final String required_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + required;
 
     
     private static final OkHttpClient client = new OkHttpClient();

@@ -1,0 +1,19 @@
+{
+  "j_details":{
+  	"taskid":"TESN-1",
+  	"j_get_request_url":"https://gnarendradocuments.atlassian.net/rest/api/2/issue/",
+  	"j_u":"gnarendradocuments@gmail.com",
+  	"j_p":"ATATT3xFfGF0dfLqkHlh6GcFiRkFb-qqjWEZvh_GYj3n8KCaffKjrOFmqQj4y3K84yNs2km7SPbZtOI50OD7T0rnhlnnyPUjhPhqpDoqkXl9aJ0yunsz2GD0dZVZvirXvUimMJhiqd3h2MtRFC9pQlunrztJefSbL8QGQwlYiMIX0kxR6uK1PxY=A73840F2"},
+	
+  "login": {
+    "url": "https://practicetestautomation.com/practice-test-login/",
+    "username": "student",
+    "password": "Password123"
+  },
+  
+  "web_details":{
+  "web_url":"https://practicetestautomation.com/practice-test-login/"
+  }
+  
+ 
+}
