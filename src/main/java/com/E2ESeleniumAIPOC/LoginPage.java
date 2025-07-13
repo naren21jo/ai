@@ -8,9 +8,13 @@ import org.openqa.selenium.edge.EdgeDriver;
 public class LoginPage {
 
     public static void main(String[] args) {
+
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
+
         WebDriver driver = new EdgeDriver();
+
         driver.manage().window().maximize();
+
         driver.get("https://practicetestautomation.com/practice-test-login/");
 
         WebElement usernameField = driver.findElement(By.id("username"));
@@ -22,12 +26,13 @@ public class LoginPage {
         WebElement submitButton = driver.findElement(By.id("submit"));
         submitButton.click();
 
-        WebElement loggedInText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
+        WebElement homePageTextElement = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
+        String homePageText = homePageTextElement.getText();
 
-        if (loggedInText.isDisplayed()) {
-            System.out.println("Login successful. Home page verified.");
+        if (homePageText.contains("Logged In Successfully")) {
+           // System.out.println("Login successful!");
         } else {
-            System.out.println("Login failed.");
+           // System.out.println("Login failed!");
         }
 
         driver.quit();
