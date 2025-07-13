@@ -2,7 +2,6 @@ package com.E2ESeleniumAIPOC;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.edge.EdgeDriver;
 
 public class LoginPage {
@@ -11,22 +10,18 @@ public class LoginPage {
         System.setProperty("webdriver.edge.driver", "drivers//msedgedriver.exe");
         WebDriver driver = new EdgeDriver();
         driver.manage().window().maximize();
-
         driver.get("https://practicetestautomation.com/practice-test-login/");
 
-        WebElement usernameField = driver.findElement(By.id("username"));
-        usernameField.sendKeys("student");
+        driver.findElement(By.id("username")).sendKeys("student");
+        driver.findElement(By.id("password")).sendKeys("Password123");
+        driver.findElement(By.id("submit")).click();
 
-        WebElement passwordField = driver.findElement(By.id("password"));
-        passwordField.sendKeys("Password123");
+        String actualText = driver.findElement(By.xpath("//h1[@class='post-title']")).getText();
 
-        WebElement submitButton = driver.findElement(By.id("submit"));
-        submitButton.click();
-
-        WebElement loggedInText = driver.findElement(By.xpath("//h1[contains(text(),'Logged In Successfully')]"));
-        if(loggedInText.isDisplayed())
-        {
-         System.out.println("login succesfull");
+        if (actualText.equals("Logged In Successfully")) {
+            System.out.println("Login successful!");
+        } else {
+            System.out.println("Login failed.");
         }
 
         driver.quit();
